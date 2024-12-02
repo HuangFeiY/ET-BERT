@@ -1,6 +1,8 @@
 """
 This script provides an exmaple to wrap UER-py for classification.
 """
+
+# 微调
 import random
 import argparse
 import torch

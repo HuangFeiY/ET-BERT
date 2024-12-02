@@ -90,12 +90,21 @@ python3 inference/run_classifier_infer.py --load_model_path models/finetuned_mod
 ### Pre-process
 To reproduce the steps necessary to pre-train ET-BERT on network traffic data, follow the following steps:
  1. Run `vocab_process/main.py` to generate the encrypted traffic corpus or directly use the generated corpus in `corpora/`. Note you'll need to change the file paths and some configures at the top of the file.
+
+    ***这一步先前就已经有corpora/encrypted_traffic_burst.txt了，目标是生成encryptd_vocab.txt***
+
  2. Run `main/preprocess.py` to pre-process the encrypted traffic burst corpus.
+    
+    ***encrypted_traffic_burst是怎么来的？--- 来源于/data_process/dataset_generation.py  预训练数据集生成的burst***
+    
     ```
        python3 preprocess.py --corpus_path corpora/encrypted_traffic_burst.txt \
                              --vocab_path models/encryptd_vocab.txt \
                              --dataset_path dataset.pt --processes_num 8 --target bert
     ```
+    
+    ***这一步骤的目的是生成用于bert训练的数据集, 具体操作包括从所有documents中构建instance，具体操作包括，选取一半的sentence,替换后半部分segment;对15%的token进行masking***
+    
  3. Run `data_process/main.py` to generate the data for downstream tasks if there is a dataset in pcap format that needs to be processed. This process includes two steps. The first is to split pcap files by setting `splitcap=True` in `datasets/main.py:54`  and save as `npy` datasets. Then the second is to generate the fine-tuning data. If you use the shared datasets, then you need to create a folder under the `dataset_save_path` named `dataset` and copy the datasets here.
 
 ### Pre-training

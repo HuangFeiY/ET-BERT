@@ -190,6 +190,7 @@ def convert_by_vocab(vocab, items):
     """Converts a sequence of [tokens|ids] using the vocab."""
     output = []
     for item in items:
+        # 这可能是会报错的一个地方，因为目前的代码中vocab类没有__getitem__方法
         output.append(vocab[item])
     return output
 
@@ -204,6 +205,7 @@ def convert_ids_to_tokens(inv_vocab, ids):
 
 def whitespace_tokenize(text):
     """Runs basic whitespace cleaning and splitting on a piece of text."""
+    # strip() 是 Python 字符串方法，用于去掉字符串两端的空白字符，包括空格、制表符（\t）、换行符（\n）等。
     text = text.strip()
     if not text:
         return []

@@ -24,6 +24,7 @@ def mask_seq(src, tokenizer, whole_word_masking, span_masking, span_geo_prob, sp
         src = src_no_pad
 
     random.shuffle(tokens_index)
+    # 15%的token进行mask
     num_to_predict = max(1, int(round(len(src_no_pad) * 0.15)))
     tgt_mlm = []
     for index_set in tokens_index:
@@ -209,10 +210,12 @@ class Dataset(object):
         if workers_num == 1:
             self.worker(0, 0, lines_num)
         else:
+            # 这里使用了多线程来处理
             pool = Pool(workers_num)
             for i in range(workers_num):
                 start = i * lines_num // workers_num
                 end = (i + 1) * lines_num // workers_num
+                # apply_async 方法用于异步地将任务分配给池中的工作进程
                 pool.apply_async(func=self.worker, args=[i, start, end])
             pool.close()
             pool.join()
@@ -329,8 +332,10 @@ class BertDataset(Dataset):
                 instances.extend(self.create_ins_from_doc(all_documents, doc_index))
         return instances
 
+    # 从所有documents中构建instance，具体操作包括，选取一半的sentence,替换后半部分segment;对15%的token进行masking
     def create_ins_from_doc(self, all_documents, document_index):
         document = all_documents[document_index]
+        # 现在参数下的最大token数是128-3，这实际上是有点少的
         max_num_tokens = self.seq_length - 3
         target_seq_length = max_num_tokens
         if random.random() < self.short_seq_prob:
@@ -340,6 +345,7 @@ class BertDataset(Dataset):
         current_length = 0
         i = 0
         while i < len(document):
+            # 划分segment
             segment = document[i]
             current_chunk.append(segment)
             current_length += len(segment)
@@ -371,7 +377,8 @@ class BertDataset(Dataset):
                             tokens_b.extend(random_document[j])
                             if len(tokens_b) >= target_b_length:
                                 break
-
+                        
+                        #这两行？？？这似乎是要利用document中被截取掉的片段
                         num_unused_segments = len(current_chunk) - a_end
                         i -= num_unused_segments
 
@@ -380,6 +387,7 @@ class BertDataset(Dataset):
                         for j in range(a_end, len(current_chunk)):
                             tokens_b.extend(current_chunk[j])
 
+                    # 超长截断
                     truncate_seq_pair(tokens_a, tokens_b, max_num_tokens)
 
                     src = []
@@ -395,6 +403,7 @@ class BertDataset(Dataset):
                         src.append(PAD_ID)
 
                     if not self.dynamic_masking:
+                        # 对15%的token进行mask操作
                         src, tgt_mlm = mask_seq(src, self.tokenizer, self.whole_word_masking, self.span_masking, self.span_geo_prob, self.span_max_length)
                         instance = (src, tgt_mlm, is_random_next, seg_pos)
                     else:

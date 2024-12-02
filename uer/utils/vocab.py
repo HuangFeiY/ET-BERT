@@ -12,6 +12,7 @@ class Vocab(object):
     def __init__(self):
         self.w2i = {} 
         self.i2w = [] 
+        # word to count
         self.w2c = {} 
         self.reserved_vocab_path = \
             os.path.abspath(os.path.join(os.path.dirname(__file__), "../../models/reserved_vocab.txt"))

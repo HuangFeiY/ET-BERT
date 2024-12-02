@@ -43,6 +43,7 @@ def main():
                         help="The training target of the pretraining model.")
     parser.add_argument("--docs_buffer_size", type=int, default=100000,
                         help="The buffer size of documents in memory, specific to targets that require negative sampling.")
+    # seq_length是指token长度限制吗？如果是的话，128貌似有点少了，正常好像是512
     parser.add_argument("--seq_length", type=int, default=128, help="Sequence length of instances.")
     parser.add_argument("--tgt_seq_length", type=int, default=128, help="Target sequence length of instances.")
     parser.add_argument("--dup_factor", type=int, default=5,
@@ -74,6 +75,7 @@ def main():
         args.tgt_tokenizer = str2tokenizer[args.tgt_tokenizer](args, False)
 
     # Build and save dataset.
+    # tokenizer.vocab对应的是一个Vocab类
     dataset = str2dataset[args.target](args, tokenizer.vocab, tokenizer)
     dataset.build_and_save(args.processes_num)
 

@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 #-*- coding:utf-8 -*-
+# generate the encrypted traffic corpus
+# you are able to directly use the generated corpus in `corpora/` without runing this code
 
 import scapy.all as scapy
 import binascii
@@ -20,11 +22,12 @@ tls_date = [20210301,20210808]
 pcap_name = "app_A.pcap"
 #pcap_name = "merge.pcap"
 
-word_dir = "I:/corpora/"
-word_name = "encrypted_tls13_burst.txt"
+# 路径可能相应的得改
+word_dir = "/data/hfy/data/ET-BERT_data"
+word_name = "encrypted_traffic_burst.txt"
 
-vocab_dir = "I:/models/"
-vocab_name = "encryptd_vocab_all.txt"
+vocab_dir = "./models/"
+vocab_name = "encryptd_vocab.txt"
 
 def pcap_preprocess():
     
@@ -104,26 +107,37 @@ def cut(obj, sec):
 def build_BPE():
     # generate source dictionary,0-65535
     num_count = 65536
+    # 这个是指代什么？是指[CLS]这类特殊的token吗？
     not_change_string_count = 5
     i = 0
     source_dictionary = {} 
     tuple_sep = ()
     tuple_cls = ()
+    # [UNK]代表未知标记，如果遇到没有在词汇表的词，则用[UNK]代替
     #'PAD':0,'UNK':1,'CLS':2,'SEP':3,'MASK':4
     while i < num_count:
+        # 转化为4位16进制字符串
         temp_string = '{:04x}'.format(i) 
         source_dictionary[temp_string] = i
         i += 1
     # Initialize a tokenizer
+    # 这里使用的是WordPiece模型，同类型的还有BPE算法等
+    # 创建一个 WordPiece 标记化器实例，并对其进行配置：使用给定的词汇表 source_dictionary；
+    # 设置 [UNK] 为未知词汇的标记；配置 max_input_chars_per_word=4，限制每个单词的最大字符数为 4，防止长单词被直接处理为一个 token
     tokenizer = Tokenizer(models.WordPiece(vocab=source_dictionary,unk_token="[UNK]",max_input_chars_per_word=4))
 
     # Customize pre-tokenization and decoding
+    # pre_tokenizers负责在正式标记化之前对文本进行初步的分割处理,
+    # BertPreTokenizer() 是专门为 BERT 模型设计的预处理器，它会将输入文本基于空格和标点符号进行拆分，并且特别处理 BERT 特有的词汇和子词
     tokenizer.pre_tokenizer = pre_tokenizers.BertPreTokenizer()
+    # decoder 是将标记化后的整数 ID 转换回原始文本的组件
     tokenizer.decoder = decoders.WordPiece()
+    # post_processor 是在标记化完成后执行的操作，主要是对标记化后的输出进行后处理。
     tokenizer.post_processor = processors.BertProcessing(sep=("[SEP]",1),cls=('[CLS]',2))
 
     # And then train
     trainer = trainers.WordPieceTrainer(vocab_size=65536, min_frequency=2)
+    # 这一行有问题
     tokenizer.train([word_dir+word_name, word_dir+word_name], trainer=trainer)
 
     # And Save it
@@ -204,7 +218,9 @@ def split_cap(pcap_file,pcap_name):
     return 0
 
 if __name__ == '__main__':
-    #preprocess(pcap_dir)
+    # 这一行原来是注释的
+    # preprocess(pcap_dir)
     # build vocab
+    # BPE（Byte Pair Encoding）是一种高效的文本标记化方法，能够通过合并最频繁的字符对来构建子词单位。它在自然语言处理中发挥了重要作用，尤其是在处理未登录词和大词汇表时。
     build_BPE()
     build_vocab()
